@@ -8,10 +8,12 @@
 </h2>
 -->
 
+<br>
 
-<h2 align="center">
-<div>The W3b Management System</div>
-</h2>
+
+## The W3b Management System
+
+<br>
 
 A business management (inventory, sales, expense and servicing) system which is primarily built for `W3bStore`.This project is crafted with Nodejs, Express, Ejs and MongoDB.
 
@@ -30,38 +32,6 @@ This application has lots of features including sales, expenses, returns, servic
 - Expenses: You add, edit and delete any expenses by the number of categories.
 - Dashboard: From dashboard you can see the overview of Sales, Inventory, Expenses or Returns by date, product or customers.
 
-
-## Preview
-
-
-<table>
-
-  <tr >
-    <td colspan="2"><img src="screenshots/screenshot-00.png" title="Login Page"/></td>
-  </tr>
-  <tr>
-    <td><img src="screenshots/screenshot-01.png" title="Dashboard"/></td>
-    <td><img src="screenshots/screenshot-02.png" title="Entries"/></td>
-  </tr>
-  <tr>
-    <td><img src="screenshots/screenshot-03.png" title="Inventory"/></td>
-    <td><img src="screenshots/screenshot-04.png" title="Sales"/></td>
-  </tr>
-  <tr>
-    <td><img src="screenshots/screenshot-05.png" title="Return"/></td>
-    <td><img src="screenshots/screenshot-06.png" title="Customer"/></td>
-  </tr>
-  <tr>
-    <td><img src="screenshots/screenshot-07.png" title="Expenses"/></td>
-    <td><img src="screenshots/screenshot-08.png" title="Servicing"/></td>
-  </tr>
-  <tr>
-    <td><img src="screenshots/screenshot-09.png" title="Product"/></td>
-    <td><img src="screenshots/screenshot-10.png" title="Users"/></td>
-  </tr>
-
-</table>
-
 ### Application Access
 
 
@@ -70,8 +40,11 @@ This application has lots of features including sales, expenses, returns, servic
 
 - Admin > email: `sysadmin@w3bstore.com` | password: `SuperPassword`
 
-> Or import db.user.json to the DB
+<br>
 
+> -  Or import db.user.json to the DB
+
+<br>
 
 
 > Add Different users via the app in the users page
