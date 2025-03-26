@@ -60,7 +60,7 @@ This application has lots of features including sales, expenses, returns, servic
 > Clone the project 
 
 ```
-git clone 
+git clone https://github.com/tallentyre/w3bstore-ms
 ```
 
 > cd into the project 
