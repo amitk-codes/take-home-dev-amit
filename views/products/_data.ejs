@@ -1,3 +1,12 @@
+<!-- Add ethers.js for blockchain status checks -->
+<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js" type="application/javascript"></script>
+<script src="/js/web3.js"></script>
+
+<!-- Hidden element with product codes data -->
+<div id="product-data" style="display: none;" 
+    data-codes="<% if(locals.products) { %><%= products.map(p => p.code).join(',') %><% } %>">
+</div>
+
 <div class="content-box">
     <div class="table-responsive">
         <table class="table table-striped table-sm">
@@ -6,6 +15,7 @@
                     <th>Product Name</th>
                     <th>Product Code</th>
                     <th>Rates(Tk.)</th>
+                    <th>Blockchain Status</th>
                     <th class="text-center">Actions</th>
                 </tr>
             </thead>
@@ -16,12 +26,23 @@
                     <td><%= product.name %></td>
                     <td><%= product.code %></td>
                     <td><%= product.rate.toLocaleString(); %></td>
-
+                    <td>
+                        <span class="blockchain-status-<%= product.code %> badge badge-secondary">
+                            Checking...
+                        </span>
+                    </td>
                     <td class="table__actions text-center"
                         data-item-id="<%= product.id %>">
                         <a href="#" class="table__actions-btn productEditButton"
                             data-toggle="modal" data-target="#addProduct"><i
                                 class="ic-pencil pr-2"></i>Edit</a>
+                        
+                        <!-- Verify button - will be toggled based on verification status -->
+                        <a href="/products/verify?code=<%= product.code %>" 
+                           class="table__actions-btn text-success blockchain-verify-<%= product.code %>">
+                            <i class="ic-shield-check pr-2"></i>Verify
+                        </a>
+                        
                         <a href="#" class="table__actions-btn"
                             data-toggle="modal" data-target="#deleteModal"><i
                                 class="ic-trash pr-2"></i>Delete</a>
@@ -32,3 +53,90 @@
         </table>
     </div>
 </div>
+
+<script>
+    // Check blockchain verification status for each product
+    document.addEventListener('DOMContentLoaded', async () => {
+        // Get product codes from data element
+        const productDataEl = document.getElementById('product-data');
+        const productCodesStr = productDataEl ? productDataEl.getAttribute('data-codes') : '';
+        const productCodes = productCodesStr ? productCodesStr.split(',') : [];
+        
+        // Track network status
+        let web3Available = false;
+        let currentNetwork = null;
+        
+        try {
+            // Check if Web3/MetaMask is available
+            if (typeof window.ethereum !== 'undefined') {
+                web3Available = true;
+                // Get current chain ID
+                const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+                currentNetwork = parseInt(chainId, 16);
+                console.log("Connected to chain ID:", currentNetwork);
+            }
+        } catch (error) {
+            console.error("Error detecting network:", error);
+            web3Available = false;
+        }
+        
+        if (!web3Available) {
+            // Update all badges to show that verification is not available
+            productCodes.forEach(code => {
+                const statusBadge = document.querySelector(`.blockchain-status-${code}`);
+                const verifyButton = document.querySelector(`.blockchain-verify-${code}`);
+                
+                if (statusBadge) {
+                    statusBadge.className = 'badge badge-warning';
+                    statusBadge.textContent = 'Verification Not Available';
+                }
+                
+                // Hide verification button if Web3 is not available
+                if (verifyButton) {
+                    verifyButton.style.display = 'none';
+                }
+            });
+            return;
+        }
+        
+        // Check status for each product
+        for (const code of productCodes) {
+            if (!code) continue; // Skip empty codes
+            const statusBadge = document.querySelector(`.blockchain-status-${code}`);
+            const verifyButton = document.querySelector(`.blockchain-verify-${code}`);
+            
+            try {
+                // Get verification status from blockchain
+                const isVerified = await isProductVerified(code);
+                
+                if (statusBadge) {
+                    if (isVerified) {
+                        statusBadge.className = 'badge badge-success';
+                        statusBadge.textContent = 'Verified';
+                        
+                        // Hide verify button for already verified products
+                        if (verifyButton) {
+                            verifyButton.style.display = 'none';
+                        }
+                    } else {
+                        statusBadge.className = 'badge badge-danger';
+                        statusBadge.textContent = 'Not Verified';
+                        
+                        // Keep verify button visible for unverified products
+                    }
+                }
+            } catch (error) {
+                console.error(`Error checking verification for ${code}:`, error);
+                if (statusBadge) {
+                    statusBadge.className = 'badge badge-warning';
+                    statusBadge.textContent = 'Status Unavailable';
+                }
+                
+                // Hide verify button when status check fails
+                if (verifyButton) {
+                    verifyButton.style.display = 'none';
+                }
+            }
+        }
+    });
+</script>
