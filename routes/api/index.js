@@ -8,6 +8,7 @@ const expenseRouter = require('./expense');
 const customerRouter = require('./customer');
 const saleRouter = require('./sale');
 const returnRouter = require('./return');
+const configRouter = require('./config');
 
 router.use('/products', productRouter);
 router.use('/users', userRouter);
@@ -17,5 +18,6 @@ router.use('/expenses', expenseRouter);
 router.use('/customers', customerRouter);
 router.use('/sales', saleRouter);
 router.use('/returns', returnRouter);
+router.use('/config', configRouter);
 
 module.exports = router;
