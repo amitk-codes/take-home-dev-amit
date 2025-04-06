@@ -72,6 +72,24 @@ ProductController.read = async (req, res) => {
   });
 };
 
+ProductController.verifyPage = async (req, res) => {
+  const { code } = req.query;
+  let product = null;
+  
+  if (code) {
+    product = await Product.findOne({ code });
+  }
+  
+  // Get all products for the suggestion dropdown
+  const allProducts = await Product.find({}, 'code name');
+  
+  res.render('products/verify', {
+    selectedProduct: product,
+    allProducts,
+    code
+  });
+};
+
 ProductController.update = async (req, res) => {
   const product = await Product.findByIdAndUpdate(
     req.params.id,
@@ -108,6 +126,33 @@ ProductController.getProduct = async (req, res) => {
     return res.send("User Doesn't Exist");
   } catch (e) {
     return '';
+  }
+};
+
+// Search products API endpoint
+ProductController.searchProducts = async (req, res) => {
+  try {
+    const query = req.query.q || '';
+    
+    if (query.length < 2) {
+      return res.json({ suggestions: [] });
+    }
+    
+    // Search for products where code or name matches the query
+    const products = await Product.find({
+      $or: [
+        { code: { $regex: query, $options: 'i' } },
+        { name: { $regex: query, $options: 'i' } }
+      ]
+    }).limit(10);
+    
+    // Return just the product codes as suggestions
+    const suggestions = products.map(product => product.code);
+    
+    return res.json({ suggestions });
+  } catch (error) {
+    console.error('Product search error:', error);
+    return res.status(500).json({ error: 'An error occurred while searching products' });
   }
 };
 
