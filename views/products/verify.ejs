@@ -1,0 +1,521 @@
+<%- include('../modules/_header', {page: "Product Verification"}); %>
+<!-- Add custom CSS for this page -->
+<link rel="stylesheet" href="/css/product-verification.css">
+<%- include('../modules/_navs', {page: "Products"}); %>
+
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center border-bottom mt-0 mb-3 mt-md-3 py-4">
+    <h1 class="h3 content-header">
+        Product Verification
+    </h1>
+    <div class="content-action btn-toolbar mb-2 mb-md-0">
+        <a href="/products" class="btn btn-sm btn-outline-secondary">
+            <i class="ic-arrow-left"></i>
+            Back to Products
+        </a>
+    </div>
+</div>
+
+<%- include('../modules/_alert'); %>
+
+<div class="container mb-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="verification-card">
+                <div class="verification-card-header">
+                    <h5>Product Authenticity Verification</h5>
+                </div>
+                <div class="verification-card-body">
+                    <div class="verification-layout">
+                        <!-- Wallet Connection Section -->
+                        <div class="verification-section wallet-section">
+                            <h5 class="section-title">Wallet Connection</h5>
+                            
+                            <div class="wallet-status-container">
+                                <!-- MetaMask not found message (will show if MetaMask is not installed) -->
+                                <div id="metamask-not-found" class="d-none">
+                                    <p class="text-muted mb-3">Please install MetaMask to verify products on the blockchain</p>
+                                    <button class="wallet-connect-btn metamask-not-found-btn" disabled>
+                                        MetaMask Not Found
+                                    </button>
+                                </div>
+                                
+                                <!-- Connect wallet button (will show if MetaMask is installed but not connected) -->
+                                <div id="wallet-connect-container" class="d-none">
+                                    <p class="text-muted mb-3">Connect your wallet to verify product authenticity on the blockchain</p>
+                                    <button id="connect-wallet-btn" class="wallet-connect-btn btn-primary">
+                                        Connect Wallet
+                                    </button>
+                                </div>
+                                
+                                <!-- Connected wallet info (will show when wallet is connected) -->
+                                <div id="connected-wallet-info" class="connected-wallet-info d-none">
+                                    <p class="text-muted mb-3">Your wallet is connected and ready for verification</p>
+                                    <div class="connected-status">Connected</div>
+                                    <div id="wallet-address" class="wallet-address"></div>
+                                    <button id="disconnect-wallet-btn" class="wallet-disconnect-btn">Disconnect</button>
+                                </div>
+                                
+                                <!-- Network indicator -->
+                                <div id="network-indicator" class="network-indicator d-none">
+                                    <span>Chain Network: <strong id="network-name">Ethereum Network</strong></span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Product Verification Section -->
+                        <div class="verification-section product-section">
+                            <h5 class="section-title">Product Verification</h5>
+                            <p class="text-muted mb-3">Enter a product code to verify its authenticity</p>
+                            
+                            <form id="verification-form">
+                                <div class="product-input-container">
+                                    <div class="product-input-wrapper">
+                                        <input 
+                                            type="text" 
+                                            id="product-code" 
+                                            class="verification-input" 
+                                            placeholder="Enter product code" 
+                                            required
+                                            <% if (code) { %>value="<%= code %>"<% } %>
+                                        >
+                                        <div id="product-suggestions-box" class="product-suggestions-box d-none">
+                                            <% allProducts.forEach(function(product) { %>
+                                                <div class="product-suggestion-item" data-code="<%= product.code %>">
+                                                    <strong><%= product.code %></strong> (<%= product.name %>)
+                                                </div>
+                                            <% }); %>
+                                        </div>
+                                    </div>
+                                    
+                                    <button 
+                                        type="submit" 
+                                        id="verify-btn" 
+                                        class="verify-authenticity-btn" 
+                                        disabled
+                                    >
+                                        Verify Authenticity
+                                    </button>
+                                    
+                                    <!-- Already Verified Button (will replace verify button when product is already verified) -->
+                                    <button 
+                                        type="button" 
+                                        id="already-verified-btn" 
+                                        class="already-verified-btn d-none" 
+                                        disabled
+                                    >
+                                        Already Verified
+                                    </button>
+                                </div>
+                            </form>
+                            
+                            <!-- Verification Status -->
+                            <div class="verification-status">
+                                <div id="verification-loading" class="alert alert-info d-none">
+                                    <div class="d-flex align-items-center">
+                                        <div class="spinner-border mr-2" role="status">
+                                            <span class="sr-only">Loading...</span>
+                                        </div>
+                                        <span>Verifying product authenticity...</span>
+                                    </div>
+                                </div>
+                                
+                                <div id="verification-success" class="alert alert-success d-none">
+                                    <strong>Product Authentic!</strong> This product has been verified on the blockchain.
+                                </div>
+                                
+                                <div id="verification-error" class="alert alert-danger d-none">
+                                    <strong>Verification Failed!</strong> <span id="error-message"></span>
+                                </div>
+                                
+                                <div id="invalid-product" class="alert alert-warning d-none">
+                                    <strong>Invalid Product!</strong> This product code does not exist in the system.
+                                </div>
+                                
+                                <div id="wrong-network" class="alert alert-warning d-none">
+                                    <strong>Wrong Network!</strong> Please switch to the correct network in your wallet.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Blockchain Libraries -->
+<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js" type="application/javascript"></script>
+<script src="/js/web3.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const metamaskNotFound = document.getElementById('metamask-not-found');
+        const walletConnectContainer = document.getElementById('wallet-connect-container');
+        const connectWalletBtn = document.getElementById('connect-wallet-btn');
+        const disconnectWalletBtn = document.getElementById('disconnect-wallet-btn');
+        const connectedWalletInfo = document.getElementById('connected-wallet-info');
+        const walletAddressElement = document.getElementById('wallet-address');
+        const verifyButton = document.getElementById('verify-btn');
+        const alreadyVerifiedBtn = document.getElementById('already-verified-btn');
+        const productCodeInput = document.getElementById('product-code');
+        const verificationForm = document.getElementById('verification-form');
+        const productSuggestionsBox = document.getElementById('product-suggestions-box');
+        
+        const verificationLoading = document.getElementById('verification-loading');
+        const verificationSuccess = document.getElementById('verification-success');
+        const verificationError = document.getElementById('verification-error');
+        const invalidProductAlert = document.getElementById('invalid-product');
+        const wrongNetworkAlert = document.getElementById('wrong-network');
+        const errorMessageElement = document.getElementById('error-message');
+        
+        const networkIndicator = document.getElementById('network-indicator');
+        const networkNameElement = document.getElementById('network-name');
+        
+        // Store valid product codes
+        const validProductCodes = Array.from(document.querySelectorAll('.product-suggestion-item')).map(item => item.dataset.code);
+        
+        let connectedAddress = null;
+        let currentProductCode = null;
+        let isProductAlreadyVerified = false;
+        
+        // Check if MetaMask is installed
+        async function initializeWalletUI() {
+            const isMetaMaskInstalled = await checkMetaMaskInstalled();
+            
+            if (isMetaMaskInstalled) {
+                // MetaMask is installed, check if already connected
+                metamaskNotFound.classList.add('d-none');
+                walletConnectContainer.classList.remove('d-none');
+                
+                // Update network display
+                networkIndicator.classList.remove('d-none');
+                networkNameElement.textContent = getNetworkName();
+                
+                const address = await checkWalletConnection();
+                if (address) {
+                    handleWalletConnected(address);
+                }
+                
+                // Setup chain change listener
+                setupChainChangeListener(handleChainChanged);
+            } else {
+                // MetaMask is not installed
+                metamaskNotFound.classList.remove('d-none');
+                walletConnectContainer.classList.add('d-none');
+                connectedWalletInfo.classList.add('d-none');
+                networkIndicator.classList.add('d-none');
+            }
+            
+            // Check if product code is pre-filled
+            if (productCodeInput.value.trim()) {
+                validateProductCode(productCodeInput.value.trim());
+            }
+        }
+        
+        // Initialize wallet UI
+        initializeWalletUI();
+        
+        // Handle chain changes
+        function handleChainChanged(chainId) {
+            console.log('Chain changed to:', chainId);
+            
+            // Update network display
+            networkNameElement.textContent = getNetworkName();
+            
+            // Check if the chain is the correct one
+            const chainIdHex = "0x" + chainId.toString(16);
+            if (chainIdHex === BLOCKCHAIN_NETWORK.chainId) {
+                // Correct network
+                wrongNetworkAlert.classList.add('d-none');
+                
+                // Clear any previous disconnection flag when switching to the right network
+                localStorage.removeItem('walletManuallyDisconnected');
+                
+                // If the user is connected, check product verification status again
+                if (connectedAddress && currentProductCode) {
+                    checkProductVerificationStatus(currentProductCode);
+                }
+            } else {
+                // Wrong network
+                wrongNetworkAlert.classList.remove('d-none');
+                
+                // Disable verify button
+                verifyButton.disabled = true;
+                
+                // Reset connected state if needed
+                if (connectedAddress) {
+                    connectedAddress = null;
+                    connectedWalletInfo.classList.add('d-none');
+                    walletConnectContainer.classList.remove('d-none');
+                }
+            }
+        }
+        
+        // Connect wallet button click
+        connectWalletBtn.addEventListener('click', async function() {
+            try {
+                const address = await connectWallet();
+                handleWalletConnected(address);
+            } catch (error) {
+                console.error('Error connecting wallet:', error);
+                // Display error message in UI instead of alert
+                errorMessageElement.textContent = error.message || 'Could not connect to wallet';
+                verificationError.classList.remove('d-none');
+            }
+        });
+        
+        // Disconnect wallet button click
+        disconnectWalletBtn.addEventListener('click', function() {
+            disconnectWallet();
+            handleWalletDisconnected();
+        });
+        
+        // Handle wallet connected state
+        function handleWalletConnected(address) {
+            connectedAddress = address;
+            walletAddressElement.textContent = formatAddress(address);
+            walletConnectContainer.classList.add('d-none');
+            connectedWalletInfo.classList.remove('d-none');
+            
+            // Check verification status of current product if available
+            if (currentProductCode) {
+                checkProductVerificationStatus(currentProductCode);
+            }
+        }
+        
+        // Handle wallet disconnected state
+        function handleWalletDisconnected() {
+            connectedAddress = null;
+            walletConnectContainer.classList.remove('d-none');
+            connectedWalletInfo.classList.add('d-none');
+            verifyButton.disabled = true;
+            
+            // Reset verification status UI
+            showVerifyButton();
+        }
+        
+        // Check if a product exists
+        function validateProductCode(productCode) {
+            const isValid = validProductCodes.includes(productCode);
+            
+            // Reset the input style
+            productCodeInput.classList.remove('invalid-input');
+            invalidProductAlert.classList.add('d-none');
+            
+            if (!isValid) {
+                productCodeInput.classList.add('invalid-input');
+                invalidProductAlert.classList.remove('d-none');
+                verifyButton.disabled = true;
+                alreadyVerifiedBtn.classList.add('d-none');
+                return false;
+            }
+            
+            // If valid, update current product code and check verification status
+            currentProductCode = productCode;
+            invalidProductAlert.classList.add('d-none');
+            
+            // Check blockchain verification status if wallet is connected
+            if (connectedAddress) {
+                checkProductVerificationStatus(productCode);
+            } else {
+                // Enable verify button if wallet connected
+                showVerifyButton();
+                verifyButton.disabled = !connectedAddress;
+            }
+            
+            return true;
+        }
+        
+        // Check if a product is already verified on the blockchain
+        async function checkProductVerificationStatus(productCode) {
+            try {
+                resetVerificationUI();
+                
+                // Check status from blockchain
+                isProductAlreadyVerified = await isProductVerified(productCode);
+                
+                if (isProductAlreadyVerified) {
+                    // Show already verified button
+                    showAlreadyVerifiedButton();
+                } else {
+                    // Show verify button
+                    showVerifyButton();
+                    verifyButton.disabled = !connectedAddress;
+                }
+            } catch (error) {
+                console.error('Error checking verification status:', error);
+                showVerifyButton();
+                verifyButton.disabled = !connectedAddress;
+            }
+        }
+        
+        // Show verify button, hide already verified button
+        function showVerifyButton() {
+            verifyButton.classList.remove('d-none');
+            alreadyVerifiedBtn.classList.add('d-none');
+        }
+        
+        // Show already verified button, hide verify button
+        function showAlreadyVerifiedButton() {
+            verifyButton.classList.add('d-none');
+            alreadyVerifiedBtn.classList.remove('d-none');
+        }
+        
+        // Product code input - Show filtered suggestions
+        productCodeInput.addEventListener('input', function() {
+            const query = this.value.toLowerCase().trim();
+            const suggestionItems = document.querySelectorAll('.product-suggestion-item');
+            
+            // Reset any previous validation styles
+            this.classList.remove('invalid-input');
+            invalidProductAlert.classList.add('d-none');
+            
+            let hasVisibleItems = false;
+            let visibleCount = 0;
+            
+            suggestionItems.forEach(item => {
+                const code = item.dataset.code.toLowerCase();
+                const text = item.textContent.toLowerCase();
+                
+                if (query === '') {
+                    item.classList.add('d-none');
+                } else if (code.includes(query) || text.includes(query)) {
+                    item.classList.remove('d-none');
+                    hasVisibleItems = true;
+                    visibleCount++;
+                } else {
+                    item.classList.add('d-none');
+                }
+            });
+            
+            if (hasVisibleItems && query !== '') {
+                productSuggestionsBox.classList.remove('d-none');
+                
+                // Adjust max-height based on number of visible items (with a cap)
+                const itemHeight = 41; // Average height of each item in pixels
+                const maxItems = Math.min(visibleCount, 5); // Show at most 5 items without scrolling
+                const calculatedHeight = itemHeight * maxItems;
+                productSuggestionsBox.style.maxHeight = calculatedHeight + 'px';
+            } else {
+                productSuggestionsBox.classList.add('d-none');
+            }
+            
+            // If the user is typing, reset the status UI
+            resetVerificationUI();
+            showVerifyButton();
+        });
+        
+        // Handle suggestion item click
+        document.querySelectorAll('.product-suggestion-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const productCode = this.dataset.code;
+                productCodeInput.value = productCode;
+                productSuggestionsBox.classList.add('d-none');
+                validateProductCode(productCode);
+            });
+        });
+        
+        // Hide suggestions when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!productSuggestionsBox.contains(event.target) && 
+                event.target !== productCodeInput) {
+                productSuggestionsBox.classList.add('d-none');
+            }
+        });
+        
+        // Focus and blur events for better user experience
+        productCodeInput.addEventListener('focus', function() {
+            if (this.value.trim() !== '') {
+                // Show suggestions if there's text already
+                productCodeInput.dispatchEvent(new Event('input'));
+            }
+        });
+        
+        // Validate product on input change
+        productCodeInput.addEventListener('change', function() {
+            const productCode = this.value.trim();
+            if (productCode) {
+                validateProductCode(productCode);
+            }
+        });
+        
+        // Form submission
+        verificationForm.addEventListener('submit', async function(event) {
+            event.preventDefault();
+            
+            const productCode = productCodeInput.value.trim();
+            
+            if (!productCode) {
+                errorMessageElement.textContent = 'Please enter a product code';
+                verificationError.classList.remove('d-none');
+                return;
+            }
+            
+            // Validate product code
+            if (!validateProductCode(productCode)) {
+                return;
+            }
+            
+            if (!connectedAddress) {
+                errorMessageElement.textContent = 'Please connect your wallet to verify products';
+                verificationError.classList.remove('d-none');
+                return;
+            }
+            
+            // Check if product is already verified
+            if (isProductAlreadyVerified) {
+                verificationSuccess.classList.remove('d-none');
+                return;
+            }
+            
+            // Reset UI
+            resetVerificationUI();
+            
+            // Show loading
+            verificationLoading.classList.remove('d-none');
+            verifyButton.disabled = true;
+            
+            try {
+                // Make the real contract call to verify the product
+                const result = await verifyProduct(productCode, connectedAddress);
+                
+                // Hide loading
+                verificationLoading.classList.add('d-none');
+                
+                if (result.success) {
+                    // Show success
+                    verificationSuccess.classList.remove('d-none');
+                    
+                    // Update UI to show the product is now verified
+                    isProductAlreadyVerified = true;
+                    showAlreadyVerifiedButton();
+                } else {
+                    // Show error
+                    errorMessageElement.textContent = result.error || 'Unknown error occurred';
+                    verificationError.classList.remove('d-none');
+                }
+            } catch (error) {
+                // Hide loading
+                verificationLoading.classList.add('d-none');
+                
+                // Show error
+                errorMessageElement.textContent = error.message || 'Unknown error occurred';
+                verificationError.classList.remove('d-none');
+                console.error('Verification error:', error);
+            } finally {
+                verifyButton.disabled = false;
+            }
+        });
+        
+        // Reset verification UI
+        function resetVerificationUI() {
+            verificationLoading.classList.add('d-none');
+            verificationSuccess.classList.add('d-none');
+            verificationError.classList.add('d-none');
+            invalidProductAlert.classList.add('d-none');
+            wrongNetworkAlert.classList.add('d-none');
+        }
+    });
+</script>
+
+<%- include('../modules/_footer'); %> 
