@@ -1,103 +1,141 @@
+# Blockchain Product Verification System
 
-<div style="align-items:center">
-  <img src="cover.png"><br>
-    <h1> Take-Home Technical Exercise</h1>
-</div>
+This repository contains a blockchain-based product verification system to verify the authenticity of products using Ethereum smart contracts.
 
-Thank you for your application and participating in our technical assessment
+## Screenshots:
 
+![Product Verification Interface](https://res.cloudinary.com/cryptechdev/image/upload/v1744018010/0_t2sxcw.png)
 
-As part of our hiring process, we have a take-home technical test designed to assess your development skills 
+![Verification Process](https://res.cloudinary.com/cryptechdev/image/upload/v1744018009/1_w4nyta.png)
 
-## Task Breakdown
+![Connected Wallet](https://res.cloudinary.com/cryptechdev/image/upload/v1744018010/2_c38cfg.png)
 
-We have provided you with a Management System application built with Nodejs, Express, Ejs and MongoDB. The current application has no Web3 functionality, and your goal is to add blockchain interactions to enhance the system.
+## Demo Video:
 
+[▶️ Watch Demo Video](https://res.cloudinary.com/cryptechdev/video/upload/v1744018041/Screencast_from_2025-04-07_14-47-32_c0scqi.webm)
 
-The task is to enhance this system by integrating Web3 functionality into the application. You may choose to implement this integration in any part of the system.
+## Table of Contents
 
+- [Added Functionality](#added-functionality)
+- [How It Works](#how-it-works)
+- [What to Look At](#what-to-look-at)
+- [How to Run It](#how-to-run-it)
+- [Technical Notes](#technical-notes)
 
-## Requirements:
+## Added Functionality
 
-- Integrate Web3 functionality into the existing application where appropriate.
+This system extends the existing product management application with the following blockchain features:
 
-- Choose how and where to apply the features, it may be simple or complex.
+- **Product Verification Page**: A dedicated page where users can verify products on the blockchain
+- **Wallet Connection**: Integration with MetaMask for blockchain transactions
+- **Blockchain Status**: Real-time status indicators showing verification state for each product
+- **Smart Contract Integration**: Ethereum smart contract that records and tracks product verification
+- **Modern UI**: Clean, responsive interface with intuitive user experience
 
-- You are free to implement features from your past projects or something new.
+The verification system ensures that:
+- Each product can only be verified once
+- All verifications are transparent and immutable on the blockchain
 
-- Feel free to use any libraries or tools you prefer (e.g., web3.js, ethers.js, Hardhat, etc.).
+## How It Works
 
-- Your code should be efficient and scalable.
+### Smart Contract
 
+The core of the system is the `ProductVerification` smart contract which:
 
-- Provide detailed explanation of the changes you made, how they integrate with the existing system, and any challenges you faced.
+1. Stores the verification status of products
+2. Records timestamps of when products were verified
+3. Emits events when a product is verified
+4. Provides functions to check verification status
 
+### Frontend Integration
 
-## CodeBase
+The frontend connects to the blockchain through these key components:
 
-The codebase is a Management System application with various features 
+1. **Ethers.js Integration**: Handles wallet connection and blockchain interactions
+2. **Verification UI**: Provides a user-friendly interface for the verification process
+3. **Status Tracking**: Shows real-time verification status in the product list
 
-`Users`: You can create 5 types of users based on the roles and permission - Admin, Sales, Inventory, Expense, and Servicing Manager. 
+### Verification Flow
 
-`Products`: You can create as many products as you want.
+1. User connects their MetaMask wallet
+2. User enters or selects a product code from the suggestions
+3. User clicks "Verify Authenticity" button
+4. MetaMask prompts user to sign the transaction
+5. Smart contract records the verification on the blockchain
+6. UI updates to show verification success
 
-`Inventory`: List, add, edit and delete Products in the inventory
+## What to Look At
 
-`Customers`: List of customers with balances. You can add, edit and delete customer information. 
+### Key Components
 
-`Sales`: You can add sales and delete them. 
+1. **Smart Contract**
+   - `on-chain/contracts/ProductVerification.sol`: The Solidity smart contract
+   - `on-chain/scripts/deploy.js`: Deployment script
 
-`Dashboard`: From dashboard you can see the overview of Sales, Inventory, products, customers
+2. **Frontend Code**
+   - `views/products/verify.ejs`: The main verification page
+   - `public/js/web3.js`: Handles blockchain interactions
+   - `public/css/product-verification.css`: Styling for the verification page
 
-## Setup Instructions:
+3. **Backend Integration**
+   - `controllers/ProductController.js`: Added verification page controller
+   - `config/blockchain.js`: Configuration for blockchain network
 
-```
-git clone https://github.com/Tallentyre/take-home-dev-test
-```
+## How to Run It
 
-> Install Dependencies 
+### Prerequisites
 
-```
-npm i --force
-``` 
+- Node.js and npm
+- MetaMask browser extension
 
+### Setup Steps
 
+1. **Clone the repository and install dependencies**
+   ```
+   npm install
+   ```
 
-> import `db.users.json` file to your DB to get the following user (Admin role)
+2. **Set up the blockchain environment**
+   ```
+   cd on-chain
+   npm install
+   ```
 
+3. **Start a local Hardhat node**
+   ```
+   cd on-chain
+   npm run node
+   ```
 
+4. **Deploy the contract locally**
+   ```
+   # In a new terminal
+   cd on-chain
+   npm run deploy
+   ```
 
-```
-sysadmin@w3bstore.com | password: SuperPassword
-```
+5. **Configure MetaMask**
+   - Open MetaMask
+   - Create a new network with:
+     - Network Name: Hardhat Local
+     - RPC URL: http://127.0.0.1:8545
+     - Chain ID: 1337
+     - Currency Symbol: ETH
+   - Import a test account using a private key from the Hardhat node output
 
+6. **Start the application**
+   ```
+   # In the project root
+   npm start
+   ```
 
-> Running the App
+7. **Access the application**
+   - Open your browser to `http://localhost:3000`
+   - Navigate to the Products page
+   - Click on "Verify Products" button
 
-```
-npm start
-```
+## Technical Notes
 
-
-
-## Submission
-
-The code needs to be pushed to a public git repository of your choosing (e.g. GitHub, Bitbucket, Gitlab, etc)
-
-
-Explanation on the added functionality , how it works, what we should look at, how we should run it, should be included in the README. You can include screenshot or screenrecordings
-
-
-<hr><br>
-
-
-The task is to give you an opportunity to demonstrate your strengths in the most open and creative way possible.
-
-We understand that your time is valuable and we really appreciate any effort you put in to helping us build a solid team.
-
-
-Once we receive your submission, you’ll be called back for a technical interview with some of our senior developers. 
-During the interview, you should be prepared to present a demonstration of your submission so that our developers can discuss the details with you. 
-
-
-Good luck!
+- The system uses Hardhat for local blockchain development
+- Smart contract is built with OpenZeppelin's Ownable pattern for security
+- All blockchain transactions require gas fees (free on local network)
