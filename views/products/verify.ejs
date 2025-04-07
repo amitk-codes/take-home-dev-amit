@@ -54,11 +54,6 @@
                                     <div id="wallet-address" class="wallet-address"></div>
                                     <button id="disconnect-wallet-btn" class="wallet-disconnect-btn">Disconnect</button>
                                 </div>
-                                
-                                <!-- Network indicator -->
-                                <div id="network-indicator" class="network-indicator d-none">
-                                    <span>Chain Network: <strong id="network-name">Ethereum Network</strong></span>
-                                </div>
                             </div>
                         </div>
                         
@@ -103,7 +98,7 @@
                                         class="already-verified-btn d-none" 
                                         disabled
                                     >
-                                        Already Verified
+                                        Verified
                                     </button>
                                 </div>
                             </form>
@@ -167,10 +162,7 @@
         const invalidProductAlert = document.getElementById('invalid-product');
         const wrongNetworkAlert = document.getElementById('wrong-network');
         const errorMessageElement = document.getElementById('error-message');
-        
-        const networkIndicator = document.getElementById('network-indicator');
-        const networkNameElement = document.getElementById('network-name');
-        
+                
         // Store valid product codes
         const validProductCodes = Array.from(document.querySelectorAll('.product-suggestion-item')).map(item => item.dataset.code);
         
@@ -187,10 +179,6 @@
                 metamaskNotFound.classList.add('d-none');
                 walletConnectContainer.classList.remove('d-none');
                 
-                // Update network display
-                networkIndicator.classList.remove('d-none');
-                networkNameElement.textContent = getNetworkName();
-                
                 const address = await checkWalletConnection();
                 if (address) {
                     handleWalletConnected(address);
@@ -203,7 +191,6 @@
                 metamaskNotFound.classList.remove('d-none');
                 walletConnectContainer.classList.add('d-none');
                 connectedWalletInfo.classList.add('d-none');
-                networkIndicator.classList.add('d-none');
             }
             
             // Check if product code is pre-filled
@@ -219,8 +206,6 @@
         function handleChainChanged(chainId) {
             console.log('Chain changed to:', chainId);
             
-            // Update network display
-            networkNameElement.textContent = getNetworkName();
             
             // Check if the chain is the correct one
             const chainIdHex = "0x" + chainId.toString(16);

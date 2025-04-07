@@ -84,6 +84,10 @@ async function connectWallet() {
         // Ensure we're on the correct chain
         await switchToCorrectChain();
         
+        // Force a complete refresh of accounts to get the most recent selection
+        // This will ensure we get the account the user has currently selected in MetaMask
+        await window.ethereum.request({ method: 'wallet_requestPermissions', params: [{ eth_accounts: {} }] });
+        
         // Request account access
         const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
         
